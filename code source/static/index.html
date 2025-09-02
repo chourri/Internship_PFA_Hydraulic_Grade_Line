@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HGL Curve Prediction Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../static/images/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        /* ==========================================
+        Root Variables & Global Styles
+        ========================================== */
+        :root {
+            --primary-green: #2d5016;
+            --accent-green: #4a7c29;
+            --light-green: #6b9940;
+            --emerald: #10b981;
+            /* --dark-bg: rgba(246, 246, 246, 0.7); */
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --gradient-primary: linear-gradient(135deg, var(--primary-green) 0%, var(--accent-green) 100%);
+            --gradient-accent: linear-gradient(135deg, var(--emerald) 0%, var(--light-green) 100%);
+            --text-dark: #1a202c;
+            --text-muted: #718096;
+            --border-light: rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ==========================================
+        Body & Background Styles
+        ========================================== */
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-image: url("/static/images/2.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--dark-bg);
+            z-index: -1;
+            backdrop-filter: blur(1px);
+        }
+        /* ==========================================
+        Container & Layout Styles
+        ========================================== */
+        .container {
+            background: rgba(255, 255, 255, 0.781);
+            backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1400px;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(16, 185, 129, 0.03), transparent);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+           /* ==========================================
+        Typography & Text Styles
+        ========================================== */
+
+        h1 {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            font-weight: 400;
+        }
+
+        h2, h3 {
+            color: var(--primary-green);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+        }
+        /* ==========================================
+        Upload Section Styles
+        ========================================== */ 
+        .upload-section {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px dashed var(--emerald);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin: 2rem 0;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-section:hover {
+            border-color: var(--light-green);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .upload-section.dragover {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.1);
+            transform: scale(1.02);
+        }
+        /* ==========================================
+        Requirements Section Styles
+        ========================================== */
+
+        .requirements-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(107, 153, 64, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .requirements-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+        }
+        /* ==========================================
+        File Input Styles
+        ========================================== */
+        .file-input-wrapper {
+            position: relative;
+            display: block;
+            margin: 1.5rem 0;
+        }
+
+        #csvFileInput {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .file-input-display {
+            background: var(--gradient-accent);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+            border: 2px dashed transparent;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .file-input-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+
+        .file-input-display.has-file {
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            border-color: var(--emerald);
+            border-style: solid;
+        }
+
+        .file-name-display {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            color: var(--primary-green);
+            font-weight: 500;
+            display: none;
+        }
+
+        .file-name-display.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .file-info {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        /* ==========================================
+        Model Choice Styles
+        ========================================== */
+        .model-choice {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .model-choice label {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-choice label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-accent);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .model-choice label:hover::before {
+            left: 0;
+        }
+
+        .model-choice input[type="radio"]:checked + span {
+            color: white;
+        }
+
+        .model-choice label:hover,
+        .model-choice label:has(input:checked) {
+            color: white;
+            border-color: var(--emerald);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+        }
+
+        .model-choice label:has(input:checked)::before {
+            left: 0;
+        }
+
+        .model-choice input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+    
+        /* ==========================================
+        Action Buttons Styles
+        ========================================== */
+        .action-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        button {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(45, 80, 22, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.4);
+        }
+
+        button.secondary {
+            background: var(--gradient-accent);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .template-btn {
+            background: var(--gradient-accent);
+            display: inline-block;
+            margin-top: 1rem;
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 0.8rem 1.8rem;
+        }
+        /* ==========================================
+        Divider Styles
+        ========================================== */
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--emerald), transparent);
+            margin: 3rem 0;
+        }
+        /* ==========================================
+        Loading Spinner Styles
+        ========================================== */
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--emerald);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* ==========================================
+        Table Styles
+        ========================================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        tr:hover td {
+            background: rgba(16, 185, 129, 0.05);
+        }
+        /* ==========================================
+        Grid Layout Styles
+        ========================================== */
+        .comparison-charts,
+        .prediction-grid,
+        .single-result-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-charts {
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        }
+
+        .prediction-grid {
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+        }
+
+        .single-result-grid {
+            grid-template-columns: 1fr 2fr;
+            align-items: start;
+        }
+        /* ==========================================
+        Chart Container Styles
+        ========================================== */
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 1rem;
+        }
+
+        canvas {
+            border-radius: 12px;
+        }
+        /* ==========================================
+        Results Section Styles
+        ========================================== */
+        .results-section {
+            position: relative;
+            z-index: 1;
+        }
+
+        .metrics-column,
+        .curve-column {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--glass-border);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        /* ==========================================
+        Error Message Styles
+        ========================================== */
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        /* ==========================================
+        Responsive Styles
+        ========================================== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+                margin: 1rem;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .model-choice {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .single-result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-charts,
+            .prediction-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* ==========================================
+        Chat Container Styles
+        ========================================== */
+
+        .chat-section {
+            background: var(--chat-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-strong);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+        /* ==========================================
+        Chat Header Styles
+        ========================================== */
+        .chat-header {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #34d399;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        /* ==========================================
+        Chat Messages Area Styles
+        ========================================== */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: linear-gradient(to bottom, rgba(240, 253, 244, 0.3), rgba(236, 253, 245, 0.1));
+        }
+        /* ==========================================
+        Message Bubble Styles
+        ========================================== */
+
+        .message {
+            max-width: 85%;
+            padding: 1rem 1.2rem;
+            border-radius: 20px;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }   
+        /* ==========================================
+        User Message Styles
+        ========================================== */
+        .message.user {
+            background: var(--gradient-accent);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        /* ==========================================
+        Assistant Message Styles
+        ========================================== */
+        .message.assistant {
+            background: white;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            color: var(--text-dark);
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+        }
+
+        .message.assistant strong {
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        .message.assistant ul, .message.assistant ol {
+            margin: 0.5rem 0;
+            padding-left: 1.2rem;
+        }
+
+        .message.assistant li {
+            margin: 0.3rem 0;
+        }
+        /* ==========================================
+        Chat Input Area Styles
+        ========================================== */
+        .chat-input {
+            padding: 1.5rem;
+            border-top: 2px solid rgba(16, 185, 129, 0.1);
+            display: flex;
+            gap: 0.75rem;
+            background: rgba(240, 253, 244, 0.5);
+        }
+
+        .chat-input input {
+            flex: 1;
+            border: 2px solid var(--border-light);
+            border-radius: 25px;
+            padding: 1rem 1.2rem;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .chat-input input:focus {
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+        }   
+        /* ==========================================
+        Send Button Styles
+        ========================================== */
+        .chat-send {
+            background: var(--gradient-accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .chat-send:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .chat-send:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+         /* ==========================================
+        Typing Indicator Styles
+        ========================================== */
+        .typing-indicator {
+            padding: 1rem 1.2rem;
+            background: white;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 20px;
+            border-bottom-left-radius: 6px;
+            align-self: flex-start;
+            max-width: 85%;
+            font-style: italic;
+            color: var(--text-muted);
+            animation: messageSlide 0.3s ease-out;
+        }
+        /* ==========================================
+        Scrollbar Styling
+        ========================================== */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.5);
+        }
+        /* ==========================================
+        Mobile Responsiveness Styles
+        ========================================== */
+        @media (max-width: 768px) {
+            .page-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .chat-section {
+                height: 60vh;
+                min-height: 500px;
+            }
+
+            .main-content {
+                order: 2;
+                padding: 1.5rem;
+            }
+
+            .chat-section {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .page-container {
+                height: calc(100vh - 2rem);
+            }
+
+            .chat-input {
+                padding: 1rem;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+            }
+
+            .chat-header {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><img src="/static/images/OCP_Group.svg.png" alt="OCP Logo" style="height: 50px; vertical-align: middle; margin-right: 10px;">  Hydraulic Grade Line Curve Prediction Interface</h1>
+        <p class="subtitle">Upload your dataset, then choose to either train a single model for a detailed analysis or train all models to compare their performance.</p>
+        <div>
+            <img style="
+                display: block; 
+                margin: auto; 
+                border-radius: 15px;
+                border: 2px solid #e5e7eb;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
+                max-width: 100%;
+                height: auto;
+            " 
+            onmouseover="this.style.boxShadow='0 12px 35px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#3b82f6';"
+            onmouseout="this.style.boxShadow='0 8px 25px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#e5e7eb';"
+            src="../static/images/ocp.jpeg">
+        </div>
+        <div class="requirements-section">
+            <h3>Data Requirements</h3>
+            <p>Your CSV file must be comma-separated and contain the exact column headers used for training. Click the button below to download a template with all required columns.</p>
+            <a href="./template.csv" download="hgl_data_template.csv">
+                <button class="template-btn">Download Template CSV</button>
+            </a>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <h3>Upload Your Formatted Dataset</h3>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="csvFileInput" accept=".csv">
+                <div class="file-input-display" id="fileInputDisplay">
+                    <div class="upload-icon">📁</div>
+                    <div>Click to select CSV file or drag & drop here</div>
+                    <div class="file-info">Supported format: .csv files only</div>
+                </div>
+            </div>
+            
+            <div class="file-name-display" id="fileNameDisplay">
+                <strong>Selected file:</strong> <span id="fileName"></span>
+                <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.8;">
+                    Size: <span id="fileSize"></span> | Type: <span id="fileType"></span>
+                </div>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <h3>Choose an Action</h3>
+            <div class="model-choice">
+                <label>
+                    <input type="radio" name="model" value="LSTM" checked>
+                    <span>LSTM</span>
+                </label>
+                <label>
+                    <input type="radio" name="model" value="GRU">
+                    <span>GRU</span>
+                </label>
+                <label>
+                    <input type="radio" name="model" value="TCN">
+                    <span>TCN</span>
+                </label>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="trainButton" onclick="handleTrainSingleClick()">
+                    Train Selected Model
+                </button>
+                <button id="compareButton" class="secondary" onclick="handleCompareAllClick()">
+                    Train & Compare All
+                </button>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="resultsSection" class="results-section">
+            <p style="text-align: center; color: var(--text-muted);">Results will be displayed here.</p><br><br><br><br><br><br><br>
+        </div>
+
+        <div>
+            <!-- Dedicated Chat Section -->
+            <div class="chat-section">
+                <div class="chat-header">
+                    <span>🤖 HGL Assistant</span>
+                    <div class="chat-status">
+                        <div class="status-indicator"></div>
+                        Online
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <strong>Hello!</strong> I'm your HGL prediction assistant. I can help you understand:
+                        <br><br>
+                        • <strong>Hydraulic Grade Lines</strong> and pressure analysis
+                        <br>
+                        • <strong>LSTM, GRU, TCN</strong> model comparisons
+                        <br>
+                        • <strong>OCP Pipeline</strong> operations and stations
+                        <br>
+                        • <strong>Results interpretation</strong> and troubleshooting
+                        <br><br>
+                        What would you like to know?
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Ask about HGL, models, or pipeline..." maxlength="500">
+                    <button class="chat-send" id="chatSend">→</button>
+                </div>
+            </div>
+    </div>
+    
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('csvFileInput');
+        const fileInputDisplay = document.getElementById('fileInputDisplay');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+        const errorMessage = document.getElementById('errorMessage');
+        const uploadSection = document.getElementById('uploadSection');
+        const trainButton = document.getElementById('trainButton');
+        const compareButton = document.getElementById('compareButton');
+        const resultsSection = document.getElementById('resultsSection');
+    
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+    
+        // Drag and drop handlers
+        uploadSection.addEventListener('dragover', handleDragOver);
+        uploadSection.addEventListener('dragleave', handleDragLeave);
+        uploadSection.addEventListener('drop', handleDrop);
+    
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                validateAndDisplayFile(file);
+            } else {
+                resetFileDisplay();
+            }
+        }
+    
+        function handleDragOver(event) {
+            event.preventDefault();
+            uploadSection.classList.add('dragover');
+        }
+    
+        function handleDragLeave(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+        }
+    
+        function handleDrop(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+    
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                fileInput.files = files; // Update the input element
+                validateAndDisplayFile(file);
+            }
+        }
+    
+        function validateAndDisplayFile(file) {
+            // Hide previous error
+            errorMessage.classList.remove('show');
+    
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showError('Please select a CSV file. Only .csv files are supported.');
+                resetFileDisplay();
+                return;
+            }
+    
+            // Validate file size (max 50MB)
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (file.size > maxSize) {
+                showError('File size too large. Please select a file smaller than 50MB.');
+                resetFileDisplay();
+                return;
+            }
+    
+            // Display file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileType.textContent = file.type || 'text/csv';
+    
+            // Update UI
+            fileInputDisplay.classList.add('has-file');
+            fileInputDisplay.innerHTML = `
+                <div class="upload-icon"><img src="/static/images/done.jpeg" alt="done" style="height: 50px; vertical-align: middle; margin-right: 10px;"></div>
+                <div><strong>File Selected Successfully!</strong></div>
+                <div class="file-info">Click to change file or drag & drop a new one</div>
+            `;
+    
+            fileNameDisplay.classList.add('show');
+        }
+    
+        function resetFileDisplay() {
+            fileInputDisplay.classList.remove('has-file');
+            fileInputDisplay.innerHTML = `
+                <div class="upload-icon"><img src="/static/images/folderr.png" alt="folder" style="height: 50px; vertical-align: middle; margin-right: 10px;"></div>
+                <div>Click to select CSV file or drag & drop here</div>
+                <div class="file-info">Supported format: .csv files only</div>
+            `;
+            fileNameDisplay.classList.remove('show');
+        }
+    
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+    
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    
+        function showLoading(message) {
+            trainButton.disabled = true;
+            compareButton.disabled = true;
+            resultsSection.innerHTML = `<h2>${message}</h2><p style="text-align: center">Please wait...</p><div class="spinner"></div>`;
+        }
+    
+        function enableButtons() {
+            trainButton.disabled = false;
+            compareButton.disabled = false;
+        }
+    
+        // --- ChatWidget Class Definition ---
+        class ChatWidget {
+            constructor() {
+                // These elements are expected to be present in the HTML's chat-section
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.chatSend = document.getElementById('chatSend');
+                this.currentResults = null; // Store current prediction results
+    
+                // Only initialize event listeners if core chat elements are found
+                if (this.chatInput && this.chatSend) {
+                    this.initEventListeners();
+                } else {
+                    console.warn("Chat input or send button not found. Chat widget might not be fully functional.");
+                }
+            }
+    
+            initEventListeners() {
+                this.chatSend.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+                // If you later add a button to toggle the chat window, add listeners here.
+                // Based on your current HTML, the chat window is always visible.
+            }
+    
+            addMessage(content, sender = 'assistant') {
+                if (!this.chatMessages) return; // Defensive check
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+    
+                if (sender === 'assistant') {
+                    // Convert markdown-like formatting to HTML
+                    content = content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\n/g, '<br>')
+                        .replace(/• /g, '• '); // This might be redundant if the content already has bullet points
+                }
+    
+                messageDiv.innerHTML = content;
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+    
+            showTyping() {
+                if (!this.chatMessages) return; // Defensive check
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typingIndicator';
+                typingDiv.textContent = 'Assistant is thinking...';
+                this.chatMessages.appendChild(typingDiv);
+                this.scrollToBottom();
+            }
+    
+            hideTyping() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+    
+            scrollToBottom() {
+                if (this.chatMessages) { // Defensive check
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }
+            }
+    
+            async sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message) return;
+    
+                // Add user message
+                this.addMessage(message, 'user');
+                this.chatInput.value = '';
+                this.chatSend.disabled = true;
+    
+                // Show typing indicator
+                this.showTyping();
+    
+                try {
+                    const response = await fetch('http://127.0.0.1:8000/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            context: this.currentResults // Send current results as context
+                        })
+                    });
+    
+                    if (!response.ok) {
+                        throw new Error('Failed to get response from assistant');
+                    }
+    
+                    const data = await response.json();
+                    this.hideTyping();
+                    this.addMessage(data.response);
+    
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    this.hideTyping();
+                    this.addMessage('Sorry, I encountered an error. Please try again or check your connection.');
+                } finally {
+                    this.chatSend.disabled = false;
+                }
+            }
+    
+            // Method to update context when new results are available
+            updateContext(results) {
+                this.currentResults = results;
+            }
+    
+            // Method to suggest relevant questions based on current state (optional)
+            suggestQuestions(type = 'general') {
+                const suggestions = {
+                    general: [
+                        "What is HGL and why is it important?",
+                        "Which model should I use for my data?",
+                        "How do OCP pipeline stations work?"
+                    ],
+                    afterUpload: [
+                        "How should I interpret my results?",
+                        "What do these metrics mean?",
+                        "Are there any concerning patterns in my data?"
+                    ],
+                    comparison: [
+                        "Which model performed best and why?",
+                        "How do I choose between LSTM, GRU, and TCN?",
+                        "What factors affect model performance?"
+                    ]
+                };
+    
+                return suggestions[type] || suggestions.general;
+            }
+        }
+    
+        // --- Initialize chat widget AFTER its class definition ---
+        const chatWidget = new ChatWidget();
+    
+    
+        // --- Original functions that were causing the error, now defined after chatWidget is initialized ---
+    
+        async function handleTrainSingleClick() {
+            if (fileInput.files.length === 0) {
+                showError("Please select a CSV file first!");
+                return;
+            }
+            const selectedModel = document.querySelector('input[name="model"]:checked').value;
+            showLoading(`Training ${selectedModel} Model...`);
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("model_name", selectedModel);
+            try {
+                const response = await fetch("http://127.0.0.1:8000/train_single_model/", {
+                    method: "POST",
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error((await response.json()).detail);
+                }
+                const data = await response.json();
+                displaySingleModelResults(data);
+            } catch (error) {
+                resultsSection.innerHTML = `<h2 style="color: red;">An Error Occurred</h2><p>${error.message}</p>`;
+            } finally {
+                enableButtons();
+            }
+        }
+    
+        async function handleCompareAllClick() {
+            if (fileInput.files.length === 0) {
+                showError("Please select a CSV file first!");
+                return;
+            }
+            showLoading("Training all models for comparison...");
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            try {
+                const response = await fetch("http://127.0.0.1:8000/train_all_models/", {
+                    method: "POST",
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error((await response.json()).detail);
+                }
+                const data = await response.json();
+                displayComparisonResults(data);
+            } catch (error) {
+                resultsSection.innerHTML = `<h2 style="color: red;">An Error Occurred</h2><p>${error.message}</p>`;
+            } finally {
+                enableButtons();
+            }
+        }
+    
+// REPLACE your createProfessionalGeographicChart function with this one:
+function createProfessionalGeographicChart(canvasId, geographic_data, predictions, modelName) {
+    const stationNames = ['Head', 'PMS1', 'VANNE', 'PMS2', 'PMS3', 'PMS4', 'Terminal'];
+    const stationDistances = geographic_data.station_distances;
+
+    // --- New Scaling and Offset Logic ---
+    const scaleFactor = 0.5; // Adjust this value to control overall vertical scaling (e.g., 0.5 to halve the height)
+    const hglClearance = 150; // Minimum vertical distance between highest ground point and lowest HGL point
+
+    // Apply scaling to the geographic profile
+    const scaledGroundProfile = geographic_data.ground_profile.map(p => ({
+        x: p.x,
+        y: p.y * scaleFactor
+    }));
+
+    // Find min and max of the *scaled* ground profile
+    const minScaledGround = Math.min(...scaledGroundProfile.map(p => p.y));
+    const maxScaledGround = Math.max(...scaledGroundProfile.map(p => p.y));
+
+    // Calculate initial HGL values (before scaling and final offset)
+    const rawHGLValues = predictions.true_path.map(p => p.y);
+    const minRawHGL = Math.min(...rawHGLValues);
+
+    // Determine the offset needed for HGL to be above the scaled ground profile
+    // The lowest point of HGL (after its own scaling) should be at least 'hglClearance' above maxScaledGround
+    const hglOffsetNeeded = (maxScaledGround + hglClearance) - (minRawHGL * scaleFactor);
+
+    // Apply scaling and the calculated offset to HGL paths
+    const scaledTruePath = predictions.true_path.map(point => ({
+        x: point.x,
+        y: (point.y * scaleFactor) + hglOffsetNeeded
+    }));
+
+    const scaledPredPath = predictions.pred_path.map(point => ({
+        x: point.x,
+        y: (point.y * scaleFactor) + hglOffsetNeeded
+    }));
+    // --- End New Scaling and Offset Logic ---
+
+
+    // Create HGL path with river crossings exactly like your Python code
+    function createHGLPathWithRivers(pathData, riverCrossings) {
+        // Extract station distances from the pathData (assuming they are ordered)
+        const distances = pathData.map(p => p.x);
+        const hglValues = pathData.map(p => p.y);
+
+        const hgl_path_x = [];
+        const hgl_path_y = [];
+
+        for (let i = 0; i < distances.length - 1; i++) {
+            const x0 = distances[i];
+            const y0 = hglValues[i];
+            const x1 = distances[i + 1];
+            const y1 = hglValues[i + 1];
+
+            if (y0 === null || y1 === null || y0 === undefined || y1 === undefined) {
+                continue;
+            }
+
+            hgl_path_x.push(x0);
+            hgl_path_y.push(y0);
+
+            // Handle river crossings (exactly like your Python code)
+            riverCrossings.forEach(river => {
+                // Check if the river crossing is within the current segment
+                if ((river.start_km >= x0 && river.start_km < x1) || (river.end_km > x0 && river.end_km <= x1)) {
+                    const segmentLength = x1 - x0;
+                    if (segmentLength === 0) return; // Avoid division by zero
+
+                    // Ensure river coordinates are within the segment for interpolation
+                    const riverStartInSegment = Math.max(river.start_km, x0);
+                    const riverEndInSegment = Math.min(river.end_km, x1);
+
+                    const mid = (riverStartInSegment + riverEndInSegment) / 2;
+                    const base_level = y0 + (y1 - y0) * ((mid - x0) / segmentLength); // Linear interpolation
+                    const rise = river.rise_height_m * scaleFactor; // Scale the rise height as well
+
+                    // Add points for the river crossing, ensuring they are ordered correctly
+                    // Add point before river starts if it's within the segment
+                    if (river.start_km > x0) {
+                        hgl_path_x.push(river.start_km);
+                        hgl_path_y.push(y0 + (y1 - y0) * ((river.start_km - x0) / segmentLength));
+                    }
+
+                    hgl_path_x.push(riverStartInSegment, riverStartInSegment, riverEndInSegment, riverEndInSegment);
+                    hgl_path_y.push(base_level, base_level + rise, base_level + rise, base_level);
+
+                    // Add point after river ends if it's within the segment
+                    if (river.end_km < x1) {
+                        hgl_path_x.push(river.end_km);
+                        hgl_path_y.push(y0 + (y1 - y0) * ((river.end_km - x0) / segmentLength));
+                    }
+                }
+            });
+        }
+
+        // Add the last point if it hasn't been added yet
+        if (distances.length > 0) {
+            hgl_path_x.push(distances[distances.length - 1]);
+            hgl_path_y.push(hglValues[distances.length - 1]);
+        }
+
+        // Sort points by x-coordinate to ensure correct line drawing
+        const finalPath = hgl_path_x.map((x, index) => ({ x: x, y: hgl_path_y[index] }));
+        finalPath.sort((a, b) => a.x - b.x);
+        return finalPath;
+    }
+
+
+    // River crossings for plotting (matches your Python plot_river_crossings)
+    const plotRiverCrossings = [
+        { start_km: 80, end_km: 90, rise_height_m: 100 },
+        { start_km: 165, end_km: 175, rise_height_m: 80 }
+    ];
+
+    // Create HGL paths with river crossings based on the scaled paths
+    const trueHGLPathWithRivers = createHGLPathWithRivers(scaledTruePath, plotRiverCrossings);
+    const predHGLPathWithRivers = createHGLPathWithRivers(scaledPredPath, plotRiverCrossings);
+
+    // Create station markers - these should now align with the scaled True HGL path
+    const stationMarkers = stationDistances.map((distance, index) => {
+        // Find the corresponding y-value from the trueHGLPathWithRivers
+        // This assumes stationDistances directly correspond to points in trueHGLPathWithRivers
+        const point = trueHGLPathWithRivers.find(p => Math.abs(p.x - distance) < 0.1); // Use a small tolerance
+        return {
+            x: distance,
+            y: point ? point.y : 0, // Fallback to 0 if no point found (shouldn't happen if data is good)
+        };
+    });
+
+    // Calculate Y-axis limits using the scaled data
+    const groundElevations = scaledGroundProfile.map(p => p.y);
+    const hglValues = [...trueHGLPathWithRivers.map(p => p.y), ...predHGLPathWithRivers.map(p => p.y)];
+
+    const minGroundY = Math.min(...groundElevations);
+    const maxGroundY = Math.max(...groundElevations);
+    const minHglY = Math.min(...hglValues);
+    const maxHglY = Math.max(...hglValues);
+
+    const yMin = 0; // Start from 0
+    const yMax = Math.max(maxGroundY, maxHglY) + (200 * scaleFactor); // Add scaled buffer
+
+    new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Ground Profile',
+                    data: scaledGroundProfile, // Use scaled ground profile
+                    showLine: true,
+                    fill: 'origin',
+                    backgroundColor: 'rgba(139, 115, 85, 0.6)',
+                    borderColor: 'rgb(255, 140, 0)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    order: 4
+                },
+                {
+                    label: 'True HGL',
+                    data: trueHGLPathWithRivers, // Use HGL path with rivers
+                    borderColor: 'rgb(0, 0, 255)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    tension: 0,
+                    showLine: true,
+                    order: 2
+                },
+                {
+                    label: `Predicted HGL (${modelName})`,
+                    data: predHGLPathWithRivers, // Use HGL path with rivers
+                    borderColor: 'rgb(255, 0, 0)',
+                    borderDash: [8, 4],
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0,
+                    showLine: true,
+                    order: 1
+                },
+                {
+                    label: 'Stations',
+                    data: stationMarkers,
+                    backgroundColor: 'rgb(0, 0, 255)',
+                    borderColor: 'white',
+                    borderWidth: 2,
+                    pointStyle: 'circle',
+                    radius: 10,
+                    hoverRadius: 10,
+                    showLine: false,
+                    order: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: modelName ? `${modelName} Model: Geographic Profile & HGL` : 'Geographic Profile & HGL',
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                annotation: {
+                    annotations: [
+                        // River crossings (matches your Python river visualization)
+                        ...plotRiverCrossings.map((river, i) => ({
+                            type: 'box',
+                            xMin: river.start_km,
+                            xMax: river.end_km,
+                            // Adjust yMin and yMax for rivers to be relative to the *scaled* ground profile
+                            yMin: (minScaledGround) + (river.rise_height_m * scaleFactor), // Scaled rise
+                            yMax: minScaledGround,
+                            backgroundColor: 'rgba(173, 216, 230, 0.5)',
+                            borderColor: 'rgba(173, 216, 230, 0.4)'
+                        }))
+                    ]
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'Distance (km)',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    min: -5,
+                    max: 195
+                },
+                y: {
+                    min: yMin,
+                    max: yMax,
+                    title: {
+                        display: true,
+                        text: 'Elevation / Head (m)',
+                        font: { size: 14, weight: 'bold' }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+}
+// -------------------------------------------------------------    
+        function displaySingleModelResults(data) {
+            // Update chat context - NOW chatWidget is defined
+            chatWidget.updateContext({
+                model_name: data.model_name,
+                metrics: data.metrics,
+                predictions: data.predictions,
+                type: 'single'
+            });
+    
+            const { model_name, metrics, predictions, geographic_data } = data;
+            resultsSection.innerHTML = `
+                <div class="fade-in">
+                    <h2><img src="/static/images/result.webp" alt="result" style="height: 50px; vertical-align: middle; margin-right: 10px;"> Results for ${model_name} Model</h2>
+                    <div class="single-result-grid">
+                        <div class="metrics-column">
+                            <h3>Performance Metrics</h3>
+                            <table>
+                                <tr><th>Metric</th><th>Value</th></tr>
+                                <tr><td>MSE</td><td>${metrics.MSE.toFixed(4)}</td></tr>
+                                <tr><td>RMSE</td><td>${metrics.RMSE.toFixed(4)}</td></tr>
+                                <tr><td>MAE</td><td>${metrics.MAE.toFixed(4)}</td></tr>
+                                <tr><td>R² Score</td><td>${metrics.R2.toFixed(4)}</td></tr>
+                            </table><br>
+                            <canvas id="singleErrorChart"></canvas><br>
+                            <canvas id="singleR2Chart"></canvas>
+                        </div>
+                        <div class="curve-column">
+                            <h3>Geographic Profile and HGL Curve</h3>
+                            <canvas id="resultChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+    
+            createProfessionalGeographicChart('resultChart', geographic_data, predictions, model_name);
+    
+            const { MSE, RMSE, MAE, R2 } = metrics;
+            new Chart(document.getElementById('singleErrorChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['MSE', 'RMSE', 'MAE'],
+                    datasets: [{
+                        label: 'Error Value (Log Scale)',
+                        data: [MSE, RMSE, MAE],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)'
+                        ]
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: { display: true, text: 'Error Metrics' }
+                    },
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Value' }
+                        }
+                    }
+                }
+            });
+    
+            new Chart(document.getElementById('singleR2Chart'), {
+                type: 'bar',
+                data: {
+                    labels: ['R² Score'],
+                    datasets: [{
+                        label: 'R² Score (Higher is Better)',
+                        data: [R2],
+                        backgroundColor: ['rgba(75, 192, 192, 0.5)']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: { display: true, text: 'Coefficient of Determination' }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 1,
+                            title: { display: true, text: 'Value' }
+                        }
+                    }
+                }
+            });
+        }
+    
+        function displayComparisonResults(data) {
+            // Update chat context - NOW chatWidget is defined
+            chatWidget.updateContext({
+                metrics: data.metrics,
+                predictions: data.predictions,
+                type: 'comparison'
+            });
+    
+            const { metrics, predictions, geographic_data } = data;
+            resultsSection.innerHTML = `
+                <div class="fade-in">
+                    <h2><img src="/static/images/performance.jpeg" alt="performance" style="height: 50px; vertical-align: middle; margin-right: 10px;"> Model Performance Comparison</h2>
+                    <div class="comparison-charts">
+                        <div><h3>Error Metrics (MSE, RMSE, MAE)</h3><canvas id="errorChart"></canvas></div>
+                        <div><h3>R² Score (Higher is Better)</h3><canvas id="r2Chart"></canvas></div>
+                    </div><hr>
+                    <h2><img src="/static/images/progress.png" alt="progress" style="height: 50px; vertical-align: middle; margin-right: 10px;"> Geographic Profile and Curve Predictions</h2>
+                    <div id="predictionCharts" class="prediction-grid"></div>
+                </div>
+            `;
+    
+            const modelNames = Object.keys(metrics);
+            const mseValues = modelNames.map(m => metrics[m].MSE);
+            const rmseValues = modelNames.map(m => metrics[m].RMSE);
+            const maeValues = modelNames.map(m => metrics[m].MAE);
+            const r2Values = modelNames.map(m => metrics[m].R2);
+    
+            new Chart(document.getElementById('errorChart'), {
+                type: 'bar',
+                data: {
+                    labels: modelNames,
+                    datasets: [
+                        { label: 'MSE', data: mseValues, backgroundColor: 'rgba(255, 99, 132, 0.5)' },
+                        { label: 'RMSE', data: rmseValues, backgroundColor: 'rgba(54, 162, 235, 0.5)' },
+                        { label: 'MAE', data: maeValues, backgroundColor: 'rgba(255, 206, 86, 0.5)' }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Error Value (Log Scale)' }
+                        }
+                    }
+                }
+            });
+    
+            new Chart(document.getElementById('r2Chart'), {
+                type: 'bar',
+                data: {
+                    labels: modelNames,
+                    datasets: [
+                        { label: 'R² Score', data: r2Values, backgroundColor: 'rgba(75, 192, 192, 0.5)' }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'R² Score' }
+                        }
+                    }
+                }
+            });
+    
+            const predictionChartsContainer = document.getElementById('predictionCharts');
+            for (const modelName of modelNames) {
+                const chartContainer = document.createElement('div');
+                const chartId = `prediction-chart-${modelName}`;
+                chartContainer.innerHTML = `<canvas id="${chartId}"></canvas>`;
+                predictionChartsContainer.appendChild(chartContainer);
+    
+                createProfessionalGeographicChart(chartId, geographic_data, predictions[modelName], modelName);
+            }
+        }
+    </script>
+</body>
+</html>
