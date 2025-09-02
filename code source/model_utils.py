@@ -178,23 +178,6 @@ def load_and_prepare_data(uploaded_file, features, targets, time_steps, test_siz
 # ===================================================================
 # MODEL BUILDING FUNCTIONS
 # ===================================================================
-# def build_lstm_model(input_shape, output_size):
-#     model = Sequential([LSTM(64, activation='tanh', return_sequences=True, input_shape=input_shape), Dropout(0.2),
-#                         LSTM(64, activation='tanh'), Dense(32, activation='relu'), Dense(output_size)])
-#     model.compile(optimizer='adam', loss='mean_squared_error')
-#     return model
-
-# def build_gru_model(input_shape, output_size):
-#     model = Sequential([GRU(64, activation='tanh', return_sequences=True, input_shape=input_shape), Dropout(0.2),
-#                         GRU(64, activation='tanh'), Dense(32, activation='relu'), Dense(output_size)])
-#     model.compile(optimizer='adam', loss='mean_squared_error')
-#     return model
-
-# def build_tcn_model(input_shape, output_size):
-#     model = Sequential([TCN(nb_filters=64, kernel_size=3, dilations=[1, 2, 4, 8], dropout_rate=0.2, input_shape=input_shape),
-#                         Dense(32, activation='relu'), Dense(output_size)])
-#     model.compile(optimizer='adam', loss='mean_squared_error')
-#     return model
 def build_lstm_model(input_shape, output_size):
     model = Sequential([LSTM(64, activation='tanh', return_sequences=True, input_shape=input_shape), Dropout(0.2),
                         LSTM(64, activation='tanh'), Dense(32, activation='relu'), Dense(output_size)])
