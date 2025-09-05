@@ -7,4 +7,4 @@ scikit-learn
 tensorflow
 keras-tcn
 matplotlib
-searborn
+seaborn
