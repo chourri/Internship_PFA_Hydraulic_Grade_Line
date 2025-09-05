@@ -325,3 +325,5 @@ def run_all_models_pipeline(uploaded_file):
     #     print(f"Erreur lors de l'envoi au webhook n8n: {e}")
 
     return convert_numpy_types(all_metrics), convert_numpy_types(all_predictions), convert_numpy_types(geographic_data), None
+
+

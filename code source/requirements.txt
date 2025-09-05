@@ -8,3 +8,6 @@ tensorflow
 keras-tcn
 matplotlib
 seaborn
+
+
+#pip install transformers accelerate
